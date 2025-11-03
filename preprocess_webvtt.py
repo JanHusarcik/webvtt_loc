@@ -1,28 +1,44 @@
-﻿import webvtt
+import webvtt
 import re
 import glob
-import os 
+import os
 import argparse
+
 
 def process_vtt(file):
     all_caps: bool = True
     newline_in_previous: bool = False
     with open(f"{file}.vtt", "w", encoding="utf-8") as f:
         for caption in webvtt.read(file):
-            if re.search(r'[a-z]', caption.text):
+            if re.search(r"[a-z]", caption.text):
                 all_caps = False
             fragment: str = ""
             fragment += f"⎡⎡{caption.start} --> {caption.end}⎦⎦ "
-            if caption.raw_text.startswith("- "):
-                fragment += caption.raw_text + " "
+            # multiple speakers
+            if caption.raw_text.startswith("-"):
+                fragment += (
+                    "\n".join(
+                        re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
+                        for line in caption.lines
+                    )
+                    + " "
+                )
             else:
-                fragment += " ".join(caption.raw_text.splitlines()) + " "
-            if re.match(r"^\[.*\]$", caption.raw_text):
+                cue_text = " ".join(caption.raw_text.splitlines()) + " "
+                fragment += re.sub(r"^([A-Z]+:)", r"⎡⎡Speaker \1⎦⎦ ", cue_text)
+            # sounds in brackets
+            if re.match(r"^\[[^\]]*\]$", caption.raw_text) or re.match(
+                r"⎡⎡Speaker[^⎦]*?⎦⎦ *\[[^\]]*\]", caption.raw_text
+            ):
                 if newline_in_previous:
-                    fragment = fragment+"\n"
+                    fragment += "\n"
                 else:
-                    fragment = "\n"+fragment+"\n"
+                    fragment = "\n" + fragment + "\n"
                 newline_in_previous = True
+            elif fragment.endswith("] "):
+                fragment += "\n"
+                newline_in_previous = True
+            # break after punctuation
             elif re.search(r"[!?\.]$", caption.text):
                 fragment += "\n"
                 newline_in_previous = True
@@ -34,11 +50,10 @@ def process_vtt(file):
         print("All captions are in uppercase.")
 
 
-for vtt_file in glob.glob("**/*.webvtt", recursive=True):
-    process_vtt(vtt_file)
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process all .webvtt files in a folder.")
+    parser = argparse.ArgumentParser(
+        description="Process all .webvtt files in a folder."
+    )
     parser.add_argument("folder", help="Path to the folder containing .webvtt files")
     args = parser.parse_args()
 
