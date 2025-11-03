@@ -1,5 +1,5 @@
 from unittest.mock import patch, mock_open, MagicMock
-from webvtt_loc import preprocess_webvtt
+from  webvtt_loc.preprocess_webvtt import process_vtt
 import pprint
 
 class TestPreProcess:
@@ -13,7 +13,7 @@ class TestPreProcess:
         caption.raw_text = "She had that level\nof love and care."
         mock_webvtt_read.return_value = [caption]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -33,7 +33,7 @@ class TestPreProcess:
         caption.raw_text = "I was in shock."
         mock_webvtt_read.return_value = [caption]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -58,7 +58,7 @@ class TestPreProcess:
 
         mock_webvtt_read.return_value = [caption1, caption2]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -80,7 +80,7 @@ class TestPreProcess:
         caption.lines = ["-A hostel in New York?", "-Yeah."]
         mock_webvtt_read.return_value = [caption]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -103,7 +103,7 @@ class TestPreProcess:
         caption.lines = ["-Hi, everyone. How are you?", "-TANISHA: Cold."]
         mock_webvtt_read.return_value = [caption]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -128,7 +128,7 @@ class TestPreProcess:
         caption.lines = ["BANANAS: Previously on", '"House of Villains"...']
         mock_webvtt_read.return_value = [caption]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -160,7 +160,7 @@ class TestPreProcess:
 
         mock_webvtt_read.return_value = [caption1, caption2]
 
-        preprocess_webvtt.process_vtt("testfile")
+        process_vtt("testfile")
 
         handle = mock_file()
         written = "".join(call.args[0] for call in handle.write.call_args_list)
