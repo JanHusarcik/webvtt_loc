@@ -1,6 +1,5 @@
 from unittest.mock import patch, mock_open, MagicMock
 from  preprocess_webvtt import process_vtt
-import pprint
 
 class TestPreProcess:
     @patch("preprocess_webvtt.webvtt.read")
