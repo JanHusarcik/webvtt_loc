@@ -8,7 +8,7 @@ class TestFragments:
     def log(self):
         return MagicMock()
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_join_lines(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
@@ -28,7 +28,7 @@ class TestFragments:
 
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_simple_cue(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
@@ -46,7 +46,7 @@ class TestFragments:
 
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_join_multiple_cues(self, mock_file, mock_webvtt_read, log):
         caption1 = MagicMock()
@@ -74,7 +74,7 @@ class TestFragments:
 
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_multiple_speakers(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
@@ -97,7 +97,7 @@ class TestFragments:
         print(written)
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_multiple_speakers_with_name(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
@@ -120,7 +120,7 @@ class TestFragments:
         print(written)
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_named_speaker_no_dash(self, mock_file, mock_webvtt_read, log):
         caption = MagicMock()
@@ -143,7 +143,7 @@ class TestFragments:
         print(written)
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_multiple_speakers_and_sounds(self, mock_file, mock_webvtt_read, log):
         # First caption
@@ -176,7 +176,7 @@ class TestFragments:
         )
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_named_speaker_and_simple_line(self, mock_file, mock_webvtt_read, log):
         # First caption: named speaker
@@ -207,7 +207,7 @@ class TestFragments:
         )
         assert written == expected
 
-    @patch("preprocess_webvtt.webvtt.read")
+    @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
     def test_starting_dashes(self, mock_file, mock_webvtt_read,  log):
         # Simulate a caption with censored word
