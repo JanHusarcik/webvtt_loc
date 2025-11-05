@@ -1,6 +1,4 @@
-﻿import webvtt
-import re
-from helpers.postprocess import parse_vtt_line, read_file, wrap_text_lines
+﻿from helpers.postprocess import parse_vtt_line, read_file, wrap_text_lines
 import tempfile
 import os
 

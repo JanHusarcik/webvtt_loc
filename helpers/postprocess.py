@@ -1,6 +1,6 @@
 import webvtt
 import re
-from typing import Optional, List
+from typing import List
 from structlog import BoundLogger
 import textwrap
 
@@ -53,7 +53,6 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
 
     # Split text into caption lines, one per speaker tag
     lines = []
-    pos = 0
     for m in speaker_re.finditer(text):
         # Text before this speaker tag is ignored (should be nothing or whitespace)
         start_idx = m.end()
@@ -70,7 +69,6 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
             else:
                 line_text = f"- {content}".strip()
         lines.append(line_text)
-        pos = end_idx
 
     # If there are no speaker tags, just use the text as is
     if not lines:
@@ -78,11 +76,11 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
 
     # Wrap each line if it exceeds LINE_LENGTH
     wrapped_lines = []
-    for l in lines:
-        if len(l) > LINE_LENGTH:
-            wrapped_lines.extend(wrap_text_lines(l, LINE_LENGTH))
+    for line in lines:
+        if len(line) > LINE_LENGTH:
+            wrapped_lines.extend(wrap_text_lines(line, LINE_LENGTH))
         else:
-            wrapped_lines.append(l)
+            wrapped_lines.append(line)
 
     caption_text = "\n".join(wrapped_lines)
 
@@ -95,7 +93,6 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
 def read_file(file: str) -> List[str]:
     timestamp_pattern = r"(⎡⎡\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}⎦⎦)"
     result = []
-    current = ""
 
     with open(file, "r", encoding="utf-8") as f:
         for raw_line in f:
