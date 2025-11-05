@@ -1,10 +1,12 @@
 import webvtt
+import os
 import re
 from typing import List
 from structlog import BoundLogger
 import textwrap
 
 LINE_LENGTH: int = 36
+
 
 def wrap_text_lines(text: str, width: int) -> list[str]:
     """
@@ -26,6 +28,7 @@ def wrap_text_lines(text: str, width: int) -> list[str]:
         lines_out.extend(wrapped)
     return lines_out
 
+
 def parse_vtt_line(line: str) -> webvtt.Caption:
     # Regex to extract timestamp
     timestamp_re = re.compile(
@@ -40,7 +43,7 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
         raise ValueError("No timestamp found in line")
 
     start, end = ts_match.group(1), ts_match.group(2)
-    text = line[ts_match.end():].strip()
+    text = line[ts_match.end() :].strip()
 
     # Find all speaker tags to determine if there is only one unique speaker
     speakers = []
@@ -62,7 +65,7 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
         content = text[start_idx:end_idx].strip()
         name = m.group(1)
         if len(speakers) == 1:
-            line_text = f"{name+': ' if name else ''}{content}".strip()
+            line_text = f"{name + ': ' if name else ''}{content}".strip()
         else:
             if name:
                 line_text = f"- {name}: {content}".strip()
@@ -85,9 +88,6 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
     caption_text = "\n".join(wrapped_lines)
 
     return webvtt.Caption(start, end, caption_text)
-
-
-
 
 
 def read_file(file: str) -> List[str]:
@@ -128,7 +128,13 @@ def process_vtt(file: str, log: BoundLogger):
         for line in lines:
             caption = parse_vtt_line(line)
             vtt.captions.append(caption)
-        vtt.save(f"{file}.out")
+        # Create 'final' subfolder path
+        orig_dir = os.path.dirname(file)
+        orig_filename = os.path.basename(file)
+        final_dir = os.path.join(orig_dir, "final")
+        os.makedirs(final_dir, exist_ok=True)
+        out_path = os.path.join(final_dir, orig_filename)
+        vtt.save(out_path)
     except Exception as e:
         log.exception("Processing error", file=file, error=str(e))
         raise Exception("Processing error") from e

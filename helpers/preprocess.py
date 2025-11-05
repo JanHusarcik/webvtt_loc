@@ -1,6 +1,8 @@
-﻿import webvtt
+import webvtt
 import re
 from structlog import BoundLogger
+import os
+
 
 def process_vtt(file: str, log: BoundLogger):
     all_caps: bool = True
@@ -8,14 +10,23 @@ def process_vtt(file: str, log: BoundLogger):
     newline_in_previous: bool = False
     log.info("Processing file", file=file)
     try:
-        with open(f"{file}.vtt", "w", encoding="utf-8") as f:
+        # Prepare output path in 'prepared' subfolder
+        orig_dir = os.path.dirname(file)
+        orig_filename = os.path.basename(file)
+        prepared_dir = os.path.join(orig_dir, "prepared")
+        os.makedirs(prepared_dir, exist_ok=True)
+        out_path = os.path.join(prepared_dir, orig_filename)
+
+        with open(out_path, "w", encoding="utf-8") as f:
             for caption in webvtt.read(file):
                 if re.search(r"[a-z]", caption.text):
                     all_caps = False
                 fragment: str = ""
                 fragment += f"⎡⎡{caption.start} --> {caption.end}⎦⎦ "
                 # multiple speakers
-                if caption.raw_text.startswith("-") and not caption.raw_text.startswith("--"):
+                if caption.raw_text.startswith("-") and not caption.raw_text.startswith(
+                    "--"
+                ):
                     fragment += (
                         "\n".join(
                             re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
