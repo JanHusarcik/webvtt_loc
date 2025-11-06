@@ -1,11 +1,11 @@
 import webvtt
 import os
 import re
-from typing import List
+from typing import List, Final
 from structlog import BoundLogger
 import textwrap
 
-LINE_LENGTH: int = 36
+LINE_LENGTH: Final[int] = 36
 
 
 def wrap_text_lines(text: str, width: int) -> list[str]:
