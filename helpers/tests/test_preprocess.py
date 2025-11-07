@@ -1,4 +1,3 @@
-from math import exp
 from unittest.mock import patch, mock_open, MagicMock
 from helpers.preprocess import process_vtt
 import pytest

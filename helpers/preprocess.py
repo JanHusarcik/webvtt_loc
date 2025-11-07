@@ -7,7 +7,8 @@ from typing import Final
 
 SPEAKER_MATCH_RE: Final[str] = r"^ *-(?!-)"
 SPEAKER_CAPTURE_RE: Final[str] = r"^ *-(\s*[A-Z]+:)?"
-SOUND_RE: Final[str]=r"^ *(?:\[|\()[^\]]*(?:\]|\)) *$"
+SOUND_RE: Final[str] = r"^ *(?:\[|\()[^\]]*(?:\]|\)) *$"
+
 
 def process_vtt(file: str, log: BoundLogger):
     all_caps: bool = True
@@ -31,9 +32,7 @@ def process_vtt(file: str, log: BoundLogger):
                 # multiple speakers
                 if re.match(SPEAKER_MATCH_RE, caption.raw_text):
                     # Join lines using '\n' only if line starts with '-' and not '--', else join with space
-                    if all(
-                        re.match(SPEAKER_MATCH_RE, line) for line in caption.lines
-                    ):
+                    if all(re.match(SPEAKER_MATCH_RE, line) for line in caption.lines):
                         fragment += (
                             "\n".join(
                                 re.sub(SPEAKER_CAPTURE_RE, r"⎡⎡Speaker \1⎦⎦ ", line)
