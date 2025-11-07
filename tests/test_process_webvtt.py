@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from process_webvtt import main
 
+
 class TestMain:
     @patch("process_webvtt.helpers.logging.create_log")
     @patch("process_webvtt.helpers.preprocess.process_vtt")
@@ -27,7 +28,9 @@ class TestMain:
         mock_isdir.return_value = False
         main()
         mock_preprocess_vtt.assert_called_once_with("file.webvtt", mock_logger)
-        mock_logger.info.assert_any_call("Starting", action="prepare", path="file.webvtt")
+        mock_logger.info.assert_any_call(
+            "Starting", action="prepare", path="file.webvtt"
+        )
 
     @patch("process_webvtt.helpers.logging.create_log")
     @patch("process_webvtt.helpers.postprocess.process_vtt")
@@ -53,7 +56,9 @@ class TestMain:
         mock_isdir.return_value = False
         main()
         mock_postprocess_vtt.assert_called_once_with("file.webvtt", mock_logger)
-        mock_logger.info.assert_any_call("Starting", action="finalize", path="file.webvtt")
+        mock_logger.info.assert_any_call(
+            "Starting", action="finalize", path="file.webvtt"
+        )
 
     @patch("process_webvtt.helpers.logging.create_log")
     @patch("process_webvtt.helpers.preprocess.process_vtt")

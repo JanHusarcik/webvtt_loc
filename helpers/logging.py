@@ -2,12 +2,15 @@ import structlog
 from pathlib import Path
 from datetime import datetime
 
+
 def create_log(filename: str = "webvtt") -> structlog.BoundLogger:
     log_path = Path(filename).with_suffix(".jsonl")
     if log_path.exists():
         # Append timestamp to the old log file before creating a new one
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = log_path.with_name(f"{log_path.stem}_{timestamp}{log_path.suffix}")
+        backup_path = log_path.with_name(
+            f"{log_path.stem}_{timestamp}{log_path.suffix}"
+        )
         log_path.rename(backup_path)
     structlog.configure(
         processors=[
