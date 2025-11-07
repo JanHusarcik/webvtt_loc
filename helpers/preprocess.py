@@ -13,7 +13,7 @@ SOUND_RE: Final[str] = r"^ *(?:\[|\()[^\]]*(?:\]|\)) *$"
 def process_vtt(file: str, log: BoundLogger):
     all_caps: bool = True
     cue_count: int = 0
-    newline_in_previous: bool = False
+
     log.info("Processing file", file=file)
     try:
         # Prepare output path in 'prepared' subfolder
@@ -24,6 +24,7 @@ def process_vtt(file: str, log: BoundLogger):
         out_path = os.path.join(prepared_dir, orig_filename)
 
         with open(out_path, "w", encoding="utf-8") as f:
+            newline_in_previous: bool = True
             for caption in webvtt.read(file):
                 if re.search(r"[a-z]", caption.text):
                     all_caps = False
