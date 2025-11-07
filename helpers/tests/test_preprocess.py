@@ -209,7 +209,7 @@ class TestFragments:
 
     @patch("helpers.preprocess.webvtt.read")
     @patch("builtins.open", new_callable=mock_open)
-    def test_starting_dashes(self, mock_file, mock_webvtt_read,  log):
+    def test_starting_dashes(self, mock_file, mock_webvtt_read, log):
         # Simulate a caption with censored word
         caption = MagicMock()
         caption.start = "00:01:29.584"
@@ -227,5 +227,53 @@ class TestFragments:
 
         assert written == expected
 
+    @patch("helpers.preprocess.webvtt.read")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_single_multiline_speaker(self, mock_file, mock_webvtt_read, log):
+        caption = MagicMock()
+        caption.start = "00:00:03.834"
+        caption.end = "00:00:08.167"
+        caption.text = "- The initial news reports\nabout the murder was shocking."
+        caption.raw_text = "- The initial news reports\nabout the murder was shocking."
+        caption.lines = ["- The initial news reports", "about the murder was shocking."]
+        mock_webvtt_read.return_value = [caption]
 
+        process_vtt("testfile", log)
 
+        handle = mock_file()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        expected = "⎡⎡00:00:03.834 --> 00:00:08.167⎦⎦ ⎡⎡Speaker ⎦⎦ The initial news reports about the murder was shocking. \n"
+
+        assert written == expected
+
+    @patch("helpers.preprocess.webvtt.read")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_sound_and_multiline_speaker(self, mock_file, mock_webvtt_read, log):
+        # First caption: sound effect
+        caption1 = MagicMock()
+        caption1.start = "00:00:00.375"
+        caption1.end = "00:00:03.250"
+        caption1.text = "(suspenseful music)"
+        caption1.raw_text = "(suspenseful music)"
+        caption1.lines = ["(suspenseful music)"]
+
+        # Second caption: speaker with dash and multiline
+        caption2 = MagicMock()
+        caption2.start = "00:00:03.250"
+        caption2.end = "00:00:06.459"
+        caption2.text = "- LaGrange is a very\npretty little town."
+        caption2.raw_text = "- LaGrange is a very\npretty little town."
+        caption2.lines = ["- LaGrange is a very", "pretty little town."]
+
+        mock_webvtt_read.return_value = [caption1, caption2]
+
+        process_vtt("testfile", log)
+
+        handle = mock_file()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        expected = (
+            "⎡⎡00:00:00.375 --> 00:00:03.250⎦⎦ (suspenseful music) \n"
+            "⎡⎡00:00:03.250 --> 00:00:06.459⎦⎦ ⎡⎡Speaker ⎦⎦ LaGrange is a very pretty little town. \n"
+        )
+
+        assert written == expected

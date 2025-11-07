@@ -27,13 +27,26 @@ def process_vtt(file: str, log: BoundLogger):
                 if caption.raw_text.startswith("-") and not caption.raw_text.startswith(
                     "--"
                 ):
-                    fragment += (
-                        "\n".join(
-                            re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
-                            for line in caption.lines
+                    # Join lines using '\n' only if line starts with '-' and not '--', else join with space
+                    if all(
+                        line.startswith("-") and not line.startswith("--")
+                        for line in caption.lines
+                    ):
+                        fragment += (
+                            "\n".join(
+                                re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
+                                for line in caption.lines
+                            )
+                            + " "
                         )
-                        + " "
-                    )
+                    else:
+                        fragment += (
+                            " ".join(
+                                re.sub(r"^-(\s*[A-Z]+:)?", r"⎡⎡Speaker \1⎦⎦ ", line)
+                                for line in caption.lines
+                            )
+                            + " "
+                        )
                 else:
                     cue_text = " ".join(caption.raw_text.splitlines()) + " "
                     fragment += re.sub(r"^([A-Z]+:)", r"⎡⎡Speaker \1⎦⎦ ", cue_text)
@@ -50,7 +63,7 @@ def process_vtt(file: str, log: BoundLogger):
                     fragment += "\n"
                     newline_in_previous = True
                 # break after punctuation
-                elif re.search(r"[!?\.][\"']?$", caption.text):
+                elif re.search(r"[!?\.\)][\"']?$", caption.text):
                     fragment += "\n"
                     newline_in_previous = True
                 else:
