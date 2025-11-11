@@ -1,8 +1,15 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from process_webvtt import main
-import difflib
 import webvtt
+import os
+import re
+import tempfile
+import shutil
+from helpers import preprocess, postprocess
+from time import sleep
+import pprint
+
 
 class TestMain:
     @patch("process_webvtt.helpers.logging.create_log")
@@ -137,13 +144,53 @@ class TestMain:
             main()
         assert "Path invalid is not valid." in str(excinfo.value)
 
+
 class TestRoundtrip:
-    def normalize(self):
-        pass
-    def equality(self):
-        pass
+    def normalize(self, text:str) ->str:
+        # Normalize text for comparison (strip, unify whitespace)
+        normalized = re.sub(r"(?m)^\s*-(?!-)\s*", "- ", text)
+        normalized=" ".join(normalized.strip().split())
+        return normalized
+
+    def equality(self, cap1:webvtt.Caption, cap2:webvtt.Caption)->bool:
+        # Compare start, end, and normalized text
+        return (
+            cap1.start == cap2.start
+            and cap1.end == cap2.end
+            and self.normalize(cap1.text) == self.normalize(cap2.text)
+        )
+
     def test_roundtrip(self):
-        pass
-        # convert original vtt to internal format
-        # convert back to vtt
-        # compare original and roundtripped vtt by parsing as webvtt and comparing cues
+        # Setup temp directory for prepared/final files
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orig_file = os.path.join(os.path.dirname(__file__), "sample1.webvtt")
+            # Copy original to temp to avoid modifying source
+            test_file = os.path.join(tmpdir, "sample1.webvtt")
+            shutil.copyfile(orig_file, test_file)
+
+            # Run preprocess to create prepared file
+            logger = MagicMock()
+            preprocess.process_vtt(test_file, logger)
+            prepared_file = os.path.join(tmpdir, "prepared", "sample1.webvtt")
+            # Run postprocess to create finalized file
+            postprocess.process_vtt(prepared_file, logger)
+            finalized_file = os.path.join(tmpdir, "prepared", "final", "sample1.webvtt.vtt")
+            if not os.path.exists(finalized_file):
+                # fallback for postprocess output location
+                finalized_file = os.path.join(tmpdir, "final", "sample1.webvtt")
+            # Parse original and finalized files
+            orig_vtt = webvtt.read(test_file)
+            final_vtt = webvtt.read(finalized_file)
+
+            # Compare number of captions
+            assert len(orig_vtt.captions) == len(final_vtt.captions), (
+                "Caption count mismatch"
+            )
+
+            # Compare each caption
+            for orig_cap, final_cap in zip(orig_vtt.captions, final_vtt.captions):
+                assert self.equality(orig_cap, final_cap), (
+                    f"Mismatch:\n"
+                    f"Original (not normalized):\n{orig_cap.start}-{orig_cap.end}\n{orig_cap.text}\n"
+                    f"Final:\n{final_cap.start}-{final_cap.end}\n{final_cap.text}"
+                )
