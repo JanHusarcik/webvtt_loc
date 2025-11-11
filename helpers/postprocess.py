@@ -6,6 +6,7 @@ from structlog import BoundLogger
 import textwrap
 
 LINE_LENGTH: Final[int] = 36
+TIMESTAMP_PATTERN: Final[str] = r"(⎡⎡\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}⎦⎦)"
 
 
 def wrap_text_lines(text: str, width: int) -> list[str]:
@@ -56,22 +57,29 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
 
     # Split text into caption lines, one per speaker tag
     lines = []
-    for m in speaker_re.finditer(text):
-        # Text before this speaker tag is ignored (should be nothing or whitespace)
+    matches = list(speaker_re.finditer(text))
+    # Handle text before the first speaker tag
+    if matches:
+        first_start = matches[0].start()
+        pre_text = text[:first_start].strip()
+        if pre_text:
+            lines.append(pre_text)
+    # Handle each speaker tag and its content
+    for idx, m in enumerate(matches):
         start_idx = m.end()
-        # Find the next speaker tag or end of string
-        next_m = next(speaker_re.finditer(text, start_idx), None)
+        next_m = matches[idx + 1] if idx + 1 < len(matches) else None
         end_idx = next_m.start() if next_m else len(text)
         content = text[start_idx:end_idx].strip()
         name = m.group(1)
         if len(speakers) == 1:
-            line_text = f"{name + ': ' if name else ''}{content}".strip()
+            line_text = f"{name + ': ' if name else '- '}{content}".strip()
         else:
             if name:
                 line_text = f"- {name}: {content}".strip()
             else:
                 line_text = f"- {content}".strip()
         lines.append(line_text)
+
 
     # If there are no speaker tags, just use the text as is
     if not lines:
@@ -89,35 +97,44 @@ def parse_vtt_line(line: str) -> webvtt.Caption:
 
     return webvtt.Caption(start, end, caption_text)
 
+def process_line(line: str, result: list) -> None:
+    matches = list(re.finditer(TIMESTAMP_PATTERN, line))
+    if not matches:
+        # No timestamp: append to previous
+        if result:
+            result[-1] += " " + line
+        else:
+            result.append(line)
+    elif len(matches) == 1 and matches[0].start() == 0:
+        # Single timestamp at start: start new item
+        result.append(line)
+    else:
+        # Multiple timestamps: split at each timestamp, including any content before the first timestamp
+        splits = [0] + [m.start() for m in matches] + [len(line)]
+        for i in range(len(splits) - 1):
+            segment = line[splits[i]:splits[i + 1]].strip()
+            if not segment:
+                continue
+            # If this is the first segment and it does not start with a timestamp, join it to previous
+            if i == 0 and not re.match(TIMESTAMP_PATTERN, segment):
+                if result:
+                    result[-1] += " " + segment
+                else:
+                    result.append(segment)
+            else:
+                result.append(segment)
+
 
 def read_file(file: str) -> List[str]:
-    timestamp_pattern = r"(⎡⎡\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}⎦⎦)"
     result = []
-
     with open(file, "r", encoding="utf-8") as f:
         for raw_line in f:
             line = raw_line.rstrip("\n")
             if not line.strip():
-                continue  # skip empty lines
-            # Find all timestamp matches and their positions
-            matches = list(re.finditer(timestamp_pattern, line))
-            if not matches:
-                # No timestamp: append to previous
-                if result:
-                    result[-1] += " " + line
-                else:
-                    result.append(line)
-            elif len(matches) == 1 and matches[0].start() == 0:
-                # Single timestamp at start: start new item
-                result.append(line)
-            else:
-                # Multiple timestamps: split at each timestamp
-                splits = [m.start() for m in matches] + [len(line)]
-                for i in range(len(matches)):
-                    segment = line[splits[i] : splits[i + 1]].strip()
-                    if segment:
-                        result.append(segment)
+                continue 
+            process_line(line, result)
     return result
+
 
 
 def process_vtt(file: str, log: BoundLogger):

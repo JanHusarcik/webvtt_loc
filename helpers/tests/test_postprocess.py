@@ -1,4 +1,4 @@
-from helpers.postprocess import parse_vtt_line, read_file, wrap_text_lines
+from helpers.postprocess import parse_vtt_line, read_file, wrap_text_lines, process_line
 import tempfile
 import os
 
@@ -68,10 +68,63 @@ class TestParseVttLine:
         # Each speaker line should be a separate line
         assert caption.text == '- "The Challenge."\n- "Survivor."'
 
+    def test_parse_vtt_line_single_anonymous_speaker(self):
+        line = "⎡⎡00:00:06.500 --> 00:00:08.208⎦⎦ ⎡⎡Speaker ⎦⎦ ĢĴÖ ÝàĵüšÑħ ÝžŨb ĝĜÚ ĮÔnſnÃİ?"
+        caption = parse_vtt_line(line)
+        assert caption.start == "00:00:06.500"
+        assert caption.end == "00:00:08.208"
+        # Should be a single line with "- " prefix for anonymous speaker
+        assert caption.text == "- ĢĴÖ ÝàĵüšÑħ ÝžŨb ĝĜÚ ĮÔnſnÃİ?"
+
+
 
 class TestWrapTextLines:
     def test_wrap_text_lines_basic(self):
         text = "One of you will walk outta here with $200,000 in cash."
         expected = ["One of you will walk outta", "here with $200,000 in cash."]
         result = wrap_text_lines(text, 30)
+        assert result == expected
+
+
+class TestProcessLine:
+    def test_process_line_splits_multiple_timestamps(self):
+        # Reconstruct process_line from read_file's closure
+        # (since process_line is nested, we need to copy its logic here for direct testing)
+        input_text = (
+            "⎡⎡00:25:24.375 --> 00:25:25.959⎦⎦ ⎡⎡Speaker ⎦⎦ okÏŮ.\n"
+            "⎡⎡Speaker ⎦⎦ pŪŸ ÓtcŨ ėÞŏõģ ÃŠę ĊåG ĢůÄ ⎡⎡00:25:25.959 --> 00:25:27.501⎦⎦ ÄŜrć Zśĕįq Ŷø y jÛĭŉı Ŧęo øŵÔ şŸĳm ÂĮŤğ."
+        )
+        lines = input_text.splitlines()
+        result = []
+        for line in lines:
+            if not line.strip():
+                continue
+            process_line(line, result)
+
+        expected = [
+            "⎡⎡00:25:24.375 --> 00:25:25.959⎦⎦ ⎡⎡Speaker ⎦⎦ okÏŮ. ⎡⎡Speaker ⎦⎦ pŪŸ ÓtcŨ ėÞŏõģ ÃŠę ĊåG ĢůÄ",
+            "⎡⎡00:25:25.959 --> 00:25:27.501⎦⎦ ÄŜrć Zśĕįq Ŷø y jÛĭŉı Ŧęo øŵÔ şŸĳm ÂĮŤğ."
+        ]
+        assert result == expected
+
+    def test_process_line_splits_multiple_timestamps_2(self):
+        # Reconstruct process_line from read_file's closure
+        # (since process_line is nested, we need to copy its logic here for direct testing)
+        lines=[
+            '⎡⎡00:05:00.167 --> 00:05:02.626⎦⎦ ⎡⎡Speaker ⎦⎦ ÌŊĕ ŞiÒşĹo Ŏą iôòľŊĝ ũJBCťÚï?',
+            '⎡⎡Speaker ⎦⎦ âŽĦ ŚőÜIŦ şēČĭ⎡⎡00:05:02.626 --> 00:05:04.375⎦⎦ ŔőAZäĤ "FÔē mŚįûĳÐ" ĤþdĠŃo.',
+            '⎡⎡Speaker ⎦⎦ ģşĚI.',
+        ]
+        result = []
+        for line in lines:
+            if not line.strip():
+                continue
+            process_line(line, result)
+
+        expected = [
+            "⎡⎡00:05:00.167 --> 00:05:02.626⎦⎦ ⎡⎡Speaker ⎦⎦ ÌŊĕ ŞiÒşĹo Ŏą iôòľŊĝ ũJBCťÚï? ⎡⎡Speaker ⎦⎦ âŽĦ ŚőÜIŦ şēČĭ",
+            '⎡⎡00:05:02.626 --> 00:05:04.375⎦⎦ ŔőAZäĤ "FÔē mŚįûĳÐ" ĤþdĠŃo. ⎡⎡Speaker ⎦⎦ ģşĚI.'
+        ]
+        print(repr(result))
+        print(repr(expected))
         assert result == expected
