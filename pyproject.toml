@@ -13,5 +13,14 @@ dependencies = [
 dev = [
     "autopep8>=2.3.2",
     "pytest>=8.4.2",
+    "pytest-spec>=5.2.0",
+    "pytest-sugar>=1.1.1",
     "ruff>=0.14.3",
 ]
+
+[tool.pytest.ini_options]
+spec_header_format = "{module_name} - {module_path} - {class_name} - {test_case}:"
+spec_test_format = "{result} {docstring_summary}"
+spec_success_indicator = "✓"
+spec_failure_indicator =  "✗"
+spec_indent = "    "

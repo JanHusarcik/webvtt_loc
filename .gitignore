@@ -2,3 +2,4 @@
 webvtt_loc.pyproj
 *.jsonl
 uv.lock
+/.coverage
